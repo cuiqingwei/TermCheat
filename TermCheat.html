@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terminal Cheatsheet · Vim · Tmux · Kitty</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0d0f14;
+    --bg2:      #13161d;
+    --bg3:      #1a1e28;
+    --bg4:      #222736;
+    --border:   #2a2f3d;
+    --border2:  #353c52;
+    --text:     #c8d0e8;
+    --text2:    #7a849e;
+    --text3:    #4a5168;
+    --vim:      #7ee787;
+    --vim-dim:  #2d4a35;
+    --tmux:     #79c0ff;
+    --tmux-dim: #1e3a55;
+    --kitty:    #f78166;
+    --kitty-dim:#4a2820;
+    --star:     #e3b341;
+    --key-bg:   #1c2030;
+    --key-border:#323a52;
+    --radius:   6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 28px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--vim); box-shadow: 0 0 10px var(--vim); }
+  .badge-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 99px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all .15s;
+    user-select: none;
+  }
+  .badge.vim   { background: var(--vim-dim);   color: var(--vim);   border-color: var(--vim-dim); }
+  .badge.tmux  { background: var(--tmux-dim);  color: var(--tmux);  border-color: var(--tmux-dim); }
+  .badge.kitty { background: var(--kitty-dim); color: var(--kitty); border-color: var(--kitty-dim); }
+  .badge.all   { background: var(--bg4); color: var(--text2); border-color: var(--border2); }
+  .badge.star-filter { background: #3d3010; color: var(--star); border-color: #5a4510; }
+  .badge:not(.active) { opacity: 0.4; }
+  .badge.active.vim   { border-color: var(--vim); opacity:1; }
+  .badge.active.tmux  { border-color: var(--tmux); opacity:1; }
+  .badge.active.kitty { border-color: var(--kitty); opacity:1; }
+  .badge.active.all   { border-color: var(--border2); opacity:1; }
+  .badge.active.star-filter { border-color: var(--star); opacity:1; }
+  .search-wrap { position: relative; display: flex; align-items: center; }
+  .search-icon { position: absolute; left: 11px; color: var(--text3); font-size: 14px; pointer-events: none; }
+  input[type="search"] {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 7px 12px 7px 32px;
+    width: 240px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input[type="search"]::placeholder { color: var(--text3); }
+  input[type="search"]:focus { border-color: var(--border2); }
+  input[type="search"]::-webkit-search-cancel-button { display: none; }
+  .stats { font-size: 11px; color: var(--text3); }
+  .layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    margin-top: 1px;
+  }
+  .section { background: var(--bg); display: flex; flex-direction: column; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--bg2);
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+  .section-header:hover { background: var(--bg3); }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .vim-color   .section-dot { background: var(--vim);   box-shadow: 0 0 6px var(--vim); }
+  .tmux-color  .section-dot { background: var(--tmux);  box-shadow: 0 0 6px var(--tmux); }
+  .kitty-color .section-dot { background: var(--kitty); box-shadow: 0 0 6px var(--kitty); }
+  .vim-color   .section-title { color: var(--vim); }
+  .tmux-color  .section-title { color: var(--tmux); }
+  .kitty-color .section-title { color: var(--kitty); }
+  .section-meta { display: flex; align-items: center; gap: 8px; }
+  .section-count { font-size: 10px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 99px; }
+  .collapse-icon { color: var(--text3); font-size: 10px; transition: transform .2s; }
+  .section.collapsed .collapse-icon { transform: rotate(-90deg); }
+  .section-body { display: flex; flex-direction: column; }
+  .section.collapsed .section-body { display: none; }
+  .shortcut {
+    display: flex;
+    align-items: center;
+    padding: 7px 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+    transition: background .1s;
+    min-height: 38px;
+  }
+  .shortcut:last-child { border-bottom: none; }
+  .shortcut:hover { background: var(--bg2); }
+  .shortcut.hidden { display: none; }
+  .shortcut-star {
+    color: var(--border2);
+    cursor: pointer;
+    font-size: 13px;
+    flex-shrink: 0;
+    transition: color .15s, transform .15s;
+    line-height: 1;
+    width: 16px;
+  }
+  .shortcut-star:hover { color: var(--star); transform: scale(1.2); }
+  .shortcut-star.starred { color: var(--star); }
+  .shortcut-keys {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    min-width: 130px;
+    max-width: 170px;
+    align-items: center;
+  }
+  kbd {
+    display: inline-block;
+    background: var(--key-bg);
+    border: 1px solid var(--key-border);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 5px;
+    color: var(--text);
+    white-space: nowrap;
+    line-height: 1.4;
+  }
+  kbd.sep { background: transparent; border: none; color: var(--text3); padding: 0 1px; font-size: 9px; border-bottom-width: 1px; }
+  .shortcut-desc { font-size: 12px; color: var(--text2); flex: 1; line-height: 1.4; }
+  .hl { color: var(--text); background: rgba(255,200,0,.18); border-radius: 2px; padding: 0 1px; }
+  .section.app-hidden { display: none; }
+  #empty-state {
+    display: none;
+    padding: 80px 32px;
+    text-align: center;
+    grid-column: 1 / -1;
+    color: var(--text3);
+    font-size: 13px;
+  }
+  #empty-state.show { display: block; }
+  footer { text-align: center; padding: 20px; color: var(--text3); font-size: 11px; border-top: 1px solid var(--border); margin-top: 1px; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      TERMINAL CHEATSHEET
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="search" id="search" placeholder="搜索快捷键或描述…" autocomplete="off">
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div class="badge-row" id="filters">
+      <span class="badge all active"   data-filter="all">ALL</span>
+      <span class="badge vim active"   data-filter="vim">VIM</span>
+      <span class="badge tmux active"  data-filter="tmux">TMUX</span>
+      <span class="badge kitty active" data-filter="kitty">KITTY</span>
+      <span class="badge star-filter"  data-filter="starred" id="star-badge">★ 收藏</span>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<div class="layout" id="layout">
+
+<!-- ══ VIM: 移动 ══ -->
+<div class="section vim-color" data-app="vim">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>VIM · 移动</div>
+    <div class="section-meta"><span class="section-count">12</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="vim" data-keys="h j k l move" data-desc="左 下 上 右">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>h</kbd><kbd>j</kbd><kbd>k</kbd><kbd>l</kbd></div>
+      <div class="shortcut-desc">左 / 下 / 上 / 右</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="w b e word" data-desc="词首前进 词首后退 词尾">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>w</kbd><kbd>b</kbd><kbd>e</kbd></div>
+      <div class="shortcut-desc">词首前进 / 词首后退 / 词尾</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="0 ^ $ line start end" data-desc="行绝对首 非空首 行尾">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>0</kbd><kbd>^</kbd><kbd>$</kbd></div>
+      <div class="shortcut-desc">行绝对首 / 非空首 / 行尾</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="gg G file top bottom" data-desc="文件首行 末行">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>gg</kbd><kbd class="sep">/</kbd><kbd>G</kbd></div>
+      <div class="shortcut-desc">文件首行 / 末行</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="Ctrl+d Ctrl+u scroll half page" data-desc="半页下滚 半页上滚">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+d</kbd><kbd class="sep">/</kbd><kbd>Ctrl+u</kbd></div>
+      <div class="shortcut-desc">半页下滚 / 半页上滚</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="% bracket match jump" data-desc="跳至匹配括号标签">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>%</kbd></div>
+      <div class="shortcut-desc">跳至匹配括号 / 标签</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="f t F T find char inline" data-desc="行内跳字符 前后">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>f</kbd><kbd>t</kbd><kbd class="sep">/</kbd><kbd>F</kbd><kbd>T</kbd></div>
+      <div class="shortcut-desc">行内跳字符（向前 / 向后）</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="{ } paragraph" data-desc="上下段落">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>{</kbd><kbd class="sep">/</kbd><kbd>}</kbd></div>
+      <div class="shortcut-desc">上 / 下一段落</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="Ctrl+o Ctrl+i jumplist back forward" data-desc="跳回 跳进 jumplist">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+o</kbd><kbd class="sep">/</kbd><kbd>Ctrl+i</kbd></div>
+      <div class="shortcut-desc">跳回 / 跳进（jumplist）</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="H M L screen top middle bottom" data-desc="视窗顶 中 底">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>H</kbd><kbd>M</kbd><kbd>L</kbd></div>
+      <div class="shortcut-desc">视窗顶 / 中 / 底</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="zz zt zb center scroll" data-desc="光标行居中 置顶 置底">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>zz</kbd><kbd>zt</kbd><kbd>zb</kbd></div>
+      <div class="shortcut-desc">光标行居中 / 置顶 / 置底</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys=":N nG line number goto" data-desc="跳到第N行">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>:N</kbd><kbd class="sep">或</kbd><kbd>NG</kbd></div>
+      <div class="shortcut-desc">跳到第 N 行</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VIM: 编辑 ══ -->
+<div class="section vim-color" data-app="vim">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>VIM · 编辑</div>
+    <div class="section-meta"><span class="section-count">12</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="vim" data-keys="i a I A insert mode" data-desc="插入模式 光标前后行首行尾">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>i</kbd><kbd>a</kbd><kbd>I</kbd><kbd>A</kbd></div>
+      <div class="shortcut-desc">光标前插入 / 后插入 / 行首 / 行尾</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="o O newline open below above" data-desc="下方新行 上方新行插入">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>o</kbd><kbd class="sep">/</kbd><kbd>O</kbd></div>
+      <div class="shortcut-desc">下方 / 上方新建行并插入</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="dd yy p P delete yank paste" data-desc="删行 复制行 粘贴下上">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>dd</kbd><kbd>yy</kbd><kbd>p</kbd><kbd>P</kbd></div>
+      <div class="shortcut-desc">删行 / 复制行 / 粘贴下 / 上</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="u Ctrl+r undo redo" data-desc="撤销 重做">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>u</kbd><kbd class="sep">/</kbd><kbd>Ctrl+r</kbd></div>
+      <div class="shortcut-desc">撤销 / 重做</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="ciw caw change inner word" data-desc="修改单词 含空格">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>ciw</kbd><kbd class="sep">/</kbd><kbd>caw</kbd></div>
+      <div class="shortcut-desc">修改内部单词 / 含空格</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="di( yi( ci( paren bracket" data-desc="括号内删除复制修改">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>di(</kbd><kbd>yi(</kbd><kbd>ci(</kbd></div>
+      <div class="shortcut-desc">删 / 复制 / 修改括号内容</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="x X delete char" data-desc="删字符 前字符">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>x</kbd><kbd class="sep">/</kbd><kbd>X</kbd></div>
+      <div class="shortcut-desc">删除光标字符 / 前一字符</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys=". dot repeat last" data-desc="重复上次操作">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>.</kbd></div>
+      <div class="shortcut-desc">重复上次操作</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys=">> << indent dedent" data-desc="增加 减少缩进">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>>></kbd><kbd class="sep">/</kbd><kbd>&lt;&lt;</kbd></div>
+      <div class="shortcut-desc">增加 / 减少缩进</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="J join lines" data-desc="合并下一行到当前行">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>J</kbd></div>
+      <div class="shortcut-desc">合并下一行到当前行</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="~ gU gu case upper lower toggle" data-desc="大小写切换转换">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>~</kbd><kbd>gU</kbd><kbd>gu</kbd></div>
+      <div class="shortcut-desc">切换大小写 / 转大写 / 转小写</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="Ctrl+a Ctrl+x increment decrement number" data-desc="数字递增 递减">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+a</kbd><kbd class="sep">/</kbd><kbd>Ctrl+x</kbd></div>
+      <div class="shortcut-desc">数字递增 / 递减</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VIM: 搜索替换 ══ -->
+<div class="section vim-color" data-app="vim">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>VIM · 搜索替换</div>
+    <div class="section-meta"><span class="section-count">7</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="vim" data-keys="/ ? search forward backward" data-desc="向前搜索 向后搜索">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>/</kbd><kbd class="sep">/</kbd><kbd>?</kbd></div>
+      <div class="shortcut-desc">向前 / 向后搜索</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="n N next prev match" data-desc="下一个 上一个匹配">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>n</kbd><kbd class="sep">/</kbd><kbd>N</kbd></div>
+      <div class="shortcut-desc">下 / 上一个匹配</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="* # word cursor search" data-desc="搜索光标词 前后">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>*</kbd><kbd class="sep">/</kbd><kbd>#</kbd></div>
+      <div class="shortcut-desc">搜索光标词（前 / 后）</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys=":s substitute replace current line" data-desc="全行替换">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>:s/a/b/g</kbd></div>
+      <div class="shortcut-desc">当前行全部替换</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys=":%s global substitute replace all" data-desc="全文替换">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>:%s/a/b/g</kbd></div>
+      <div class="shortcut-desc">全文替换</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys=":noh nohl clear highlight" data-desc="清除搜索高亮">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>:noh</kbd></div>
+      <div class="shortcut-desc">清除搜索高亮</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="gd gD definition local global" data-desc="跳到局部 全局定义">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>gd</kbd><kbd class="sep">/</kbd><kbd>gD</kbd></div>
+      <div class="shortcut-desc">局部 / 全局定义跳转</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VIM: 分割 & Buffer ══ -->
+<div class="section vim-color" data-app="vim">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>VIM · 分割 & Buffer</div>
+    <div class="section-meta"><span class="section-count">10</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="vim" data-keys=":sp :vsp split window horizontal vertical" data-desc="水平 垂直分割窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>:sp</kbd><kbd class="sep">/</kbd><kbd>:vsp</kbd></div>
+      <div class="shortcut-desc">水平 / 垂直分割窗口</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="Ctrl+w hjkl navigate window split" data-desc="在分割窗口间移动">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+w</kbd><kbd>h/j/k/l</kbd></div>
+      <div class="shortcut-desc">在分割窗口间移动</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="Ctrl+w q close window quit" data-desc="关闭当前分割窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+w</kbd><kbd>q</kbd></div>
+      <div class="shortcut-desc">关闭当前分割窗口</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="Ctrl+w = equal resize" data-desc="所有窗口等分大小">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+w</kbd><kbd>=</kbd></div>
+      <div class="shortcut-desc">所有窗口等分大小</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys=":bn :bp buffer next prev" data-desc="下一个 上一个buffer">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>:bn</kbd><kbd class="sep">/</kbd><kbd>:bp</kbd></div>
+      <div class="shortcut-desc">下 / 上一个 buffer</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys=":ls list buffers" data-desc="列出所有buffer">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>:ls</kbd></div>
+      <div class="shortcut-desc">列出所有 buffer</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys=":bd buffer delete close" data-desc="关闭当前buffer">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>:bd</kbd></div>
+      <div class="shortcut-desc">关闭当前 buffer</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys=":tabnew gt gT tab next prev" data-desc="标签页 新建 切换">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>:tabnew</kbd><kbd>gt</kbd><kbd>gT</kbd></div>
+      <div class="shortcut-desc">新建标签页 / 下 / 上一个</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys=":w :q :wq :q! save write quit" data-desc="保存 退出 保存退出 强制退出">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>:w</kbd><kbd>:q</kbd><kbd>:wq</kbd><kbd>:q!</kbd></div>
+      <div class="shortcut-desc">保存 / 退出 / 保存退出 / 强制退出</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="Ctrl+w T move window tab" data-desc="窗口移到新标签页">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+w</kbd><kbd>T</kbd></div>
+      <div class="shortcut-desc">当前窗口移到新标签页</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VIM: 可视模式 & 宏 ══ -->
+<div class="section vim-color" data-app="vim">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>VIM · 可视 & 宏</div>
+    <div class="section-meta"><span class="section-count">8</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="vim" data-keys="v V Ctrl+v visual mode select" data-desc="字符 行 块可视模式">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>v</kbd><kbd>V</kbd><kbd>Ctrl+v</kbd></div>
+      <div class="shortcut-desc">字符 / 行 / 块可视模式</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="gv reselect visual" data-desc="重新选上次可视选区">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>gv</kbd></div>
+      <div class="shortcut-desc">重新选上次可视选区</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="qa record macro register" data-desc="录制宏到寄存器a">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>q</kbd><kbd>a</kbd></div>
+      <div class="shortcut-desc">录制宏到寄存器 a</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="q stop macro recording" data-desc="停止录制宏">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>q</kbd><kbd class="sep">(再次)</kbd></div>
+      <div class="shortcut-desc">停止录制宏</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="@a play macro execute" data-desc="执行宏a">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>@a</kbd></div>
+      <div class="shortcut-desc">执行宏 a</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="@@ repeat last macro" data-desc="重复上次宏">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>@@</kbd></div>
+      <div class="shortcut-desc">重复上次宏</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="ma mark position" data-desc="标记位置a">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>ma</kbd><kbd class="sep">/</kbd><kbd>`a</kbd></div>
+      <div class="shortcut-desc">标记位置 a / 跳回标记 a</div>
+    </div>
+    <div class="shortcut" data-app="vim" data-keys="Esc Ctrl+[ normal mode escape" data-desc="返回普通模式">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Esc</kbd><kbd class="sep">或</kbd><kbd>Ctrl+[</kbd></div>
+      <div class="shortcut-desc">返回普通模式</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TMUX: 会话 ══ -->
+<div class="section tmux-color" data-app="tmux">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>TMUX · 会话</div>
+    <div class="section-meta"><span class="section-count">8</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="tmux" data-keys="prefix d detach session" data-desc="分离当前会话">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>d</kbd></div>
+      <div class="shortcut-desc">分离（detach）当前会话</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="tmux new -s new session name" data-desc="新建命名会话">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>tmux new -s 名称</kbd></div>
+      <div class="shortcut-desc">新建命名会话</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="tmux a -t attach session" data-desc="附加到指定会话">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>tmux a -t 名称</kbd></div>
+      <div class="shortcut-desc">附加到指定会话</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix $ rename session" data-desc="重命名当前会话">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>$</kbd></div>
+      <div class="shortcut-desc">重命名当前会话</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix s switch session list" data-desc="列出并切换会话">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>s</kbd></div>
+      <div class="shortcut-desc">列出并切换会话</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix ( ) prev next session switch" data-desc="上下切换会话">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>(</kbd><kbd class="sep">/</kbd><kbd>)</kbd></div>
+      <div class="shortcut-desc">上 / 下一个会话</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="tmux ls list sessions" data-desc="列出所有会话">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>tmux ls</kbd></div>
+      <div class="shortcut-desc">列出所有会话</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix L last session" data-desc="切换到上次会话">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>L</kbd></div>
+      <div class="shortcut-desc">切换到上次使用的会话</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TMUX: 窗口 ══ -->
+<div class="section tmux-color" data-app="tmux">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>TMUX · 窗口</div>
+    <div class="section-meta"><span class="section-count">8</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="tmux" data-keys="prefix c create new window" data-desc="新建窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>c</kbd></div>
+      <div class="shortcut-desc">新建窗口</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix n p next prev window" data-desc="下一个 上一个窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>n</kbd><kbd class="sep">/</kbd><kbd>p</kbd></div>
+      <div class="shortcut-desc">下 / 上一个窗口</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix 0-9 number window switch" data-desc="按序号切换窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>0–9</kbd></div>
+      <div class="shortcut-desc">切换到第 N 个窗口</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix , rename window" data-desc="重命名当前窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>,</kbd></div>
+      <div class="shortcut-desc">重命名当前窗口</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix & kill close window" data-desc="关闭当前窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>&</kbd></div>
+      <div class="shortcut-desc">关闭当前窗口</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix w window list interactive" data-desc="交互式窗口列表">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>w</kbd></div>
+      <div class="shortcut-desc">交互式窗口列表</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix l last window switch" data-desc="切换到上次窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>l</kbd></div>
+      <div class="shortcut-desc">切换到上次使用的窗口</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix f find window search" data-desc="按名称查找窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>f</kbd></div>
+      <div class="shortcut-desc">按名称查找窗口</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TMUX: 面板 ══ -->
+<div class="section tmux-color" data-app="tmux">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>TMUX · 面板 Pane</div>
+    <div class="section-meta"><span class="section-count">11</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="tmux" data-keys="prefix % split horizontal left right" data-desc="左右分割面板">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>%</kbd></div>
+      <div class="shortcut-desc">左右分割（垂直切分）</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys='prefix " split vertical top bottom' data-desc="上下分割面板">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>"</kbd></div>
+      <div class="shortcut-desc">上下分割（水平切分）</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix arrow direction pane navigate" data-desc="切换面板方向">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>←↑→↓</kbd></div>
+      <div class="shortcut-desc">按方向切换面板</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix o next pane" data-desc="切换到下一个面板">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>o</kbd></div>
+      <div class="shortcut-desc">切换到下一个面板</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix x kill close pane" data-desc="关闭当前面板">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>x</kbd></div>
+      <div class="shortcut-desc">关闭当前面板</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix z zoom fullscreen pane toggle" data-desc="面板全屏切换">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>z</kbd></div>
+      <div class="shortcut-desc">面板全屏 / 取消全屏</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix { } swap pane" data-desc="交换面板 前后">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>{</kbd><kbd class="sep">/</kbd><kbd>}</kbd></div>
+      <div class="shortcut-desc">向前 / 向后交换面板</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix Ctrl+arrow resize pane" data-desc="调整面板大小">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>Ctrl+←↑→↓</kbd></div>
+      <div class="shortcut-desc">调整面板大小</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix space layout cycle" data-desc="循环切换布局">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>Space</kbd></div>
+      <div class="shortcut-desc">循环切换面板布局</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix q show pane number" data-desc="显示面板编号">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>q</kbd></div>
+      <div class="shortcut-desc">显示面板编号</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix ! break pane window" data-desc="面板移到新窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>!</kbd></div>
+      <div class="shortcut-desc">将面板移到新窗口</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TMUX: 复制模式 ══ -->
+<div class="section tmux-color" data-app="tmux">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>TMUX · 复制模式</div>
+    <div class="section-meta"><span class="section-count">7</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="tmux" data-keys="prefix [ copy mode enter" data-desc="进入复制模式">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>[</kbd></div>
+      <div class="shortcut-desc">进入复制模式</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="Space start select copy mode" data-desc="开始选择文本">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Space</kbd></div>
+      <div class="shortcut-desc">开始选择文本</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="Enter copy yank selection" data-desc="复制选中内容">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Enter</kbd></div>
+      <div class="shortcut-desc">复制选中内容</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix ] paste buffer" data-desc="粘贴缓冲区内容">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>]</kbd></div>
+      <div class="shortcut-desc">粘贴缓冲区内容</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="/ ? search copy mode" data-desc="复制模式内搜索 前后">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>/</kbd><kbd class="sep">/</kbd><kbd>?</kbd></div>
+      <div class="shortcut-desc">复制模式内前 / 后向搜索</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="q quit exit copy mode" data-desc="退出复制模式">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>q</kbd></div>
+      <div class="shortcut-desc">退出复制模式</div>
+    </div>
+    <div class="shortcut" data-app="tmux" data-keys="prefix = choose buffer paste history" data-desc="选择历史缓冲区">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Prefix</kbd><kbd>=</kbd></div>
+      <div class="shortcut-desc">交互式选择历史缓冲区</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ KITTY: 标签页 ══ -->
+<div class="section kitty-color" data-app="kitty">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>KITTY · 标签页 Tab</div>
+    <div class="section-meta"><span class="section-count">8</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+t new tab open" data-desc="新建标签页">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+t</kbd></div>
+      <div class="shortcut-desc">新建标签页</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+q close tab" data-desc="关闭当前标签页">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+q</kbd></div>
+      <div class="shortcut-desc">关闭当前标签页</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+Right Left tab next prev switch" data-desc="切换标签页">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+→</kbd><kbd class="sep">/</kbd><kbd>←</kbd></div>
+      <div class="shortcut-desc">下 / 上一个标签页</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+Alt+t rename tab" data-desc="重命名标签页">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+Alt+t</kbd></div>
+      <div class="shortcut-desc">重命名标签页</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+1-9 tab number switch" data-desc="切换到指定标签页">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+1–9</kbd></div>
+      <div class="shortcut-desc">切换到第 1–9 个标签页</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+. , move tab order" data-desc="移动标签页位置">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+.</kbd><kbd class="sep">/</kbd><kbd>,</kbd></div>
+      <div class="shortcut-desc">向右 / 向左移动标签页</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+l layout cycle next" data-desc="切换下一个窗口布局">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+l</kbd></div>
+      <div class="shortcut-desc">切换下一个窗口布局</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+` backtick focus last tab" data-desc="切换到上次标签页">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+`</kbd></div>
+      <div class="shortcut-desc">切换到上次使用的标签页</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ KITTY: 窗口 ══ -->
+<div class="section kitty-color" data-app="kitty">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>KITTY · 窗口 Window</div>
+    <div class="section-meta"><span class="section-count">9</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+Enter new window split" data-desc="新建窗口按当前布局">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+Enter</kbd></div>
+      <div class="shortcut-desc">新建窗口（按当前布局）</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+w close window" data-desc="关闭当前窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+w</kbd></div>
+      <div class="shortcut-desc">关闭当前窗口</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+] [ next prev window" data-desc="下上一个窗口">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+]</kbd><kbd class="sep">/</kbd><kbd>[</kbd></div>
+      <div class="shortcut-desc">下 / 上一个窗口</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+hjkl focus window direction" data-desc="按方向切换窗口焦点">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+h/j/k/l</kbd></div>
+      <div class="shortcut-desc">按方向切换窗口焦点</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+r resize window mode" data-desc="进入调整窗口大小模式">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+r</kbd></div>
+      <div class="shortcut-desc">进入调整窗口大小模式</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+f move window forward" data-desc="窗口向前移动">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+f</kbd></div>
+      <div class="shortcut-desc">窗口向前移动</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+b move window back" data-desc="窗口向后移动">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+b</kbd></div>
+      <div class="shortcut-desc">窗口向后移动</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+F7 detach window new tab" data-desc="分离窗口到新标签">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+F7</kbd></div>
+      <div class="shortcut-desc">将窗口分离到另一标签页</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+F8 move window tab" data-desc="移动窗口到指定标签">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+F8</kbd></div>
+      <div class="shortcut-desc">将窗口移至指定标签页</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ KITTY: 滚动 & 字体 ══ -->
+<div class="section kitty-color" data-app="kitty">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>KITTY · 滚动 & 字体</div>
+    <div class="section-meta"><span class="section-count">9</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+Up Down scroll line" data-desc="上下滚动一行">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+↑/↓</kbd></div>
+      <div class="shortcut-desc">上 / 下滚动一行</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+PageUp PageDown scroll page" data-desc="上下滚动一页">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+PgUp/PgDn</kbd></div>
+      <div class="shortcut-desc">上 / 下滚动一页</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+Home End scroll top bottom" data-desc="滚动到顶部 底部">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+Home/End</kbd></div>
+      <div class="shortcut-desc">滚动到顶部 / 底部</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+h show scrollback history pager" data-desc="在pager中查看滚动历史">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+h</kbd></div>
+      <div class="shortcut-desc">在 pager 中查看滚动历史</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+g browse scrollback grep less" data-desc="在less中浏览滚动历史">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+g</kbd></div>
+      <div class="shortcut-desc">在 less 中浏览滚动历史</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+= plus increase font size" data-desc="增大字体大小">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+=</kbd></div>
+      <div class="shortcut-desc">增大字体大小</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+- minus decrease font size" data-desc="减小字体大小">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+-</kbd></div>
+      <div class="shortcut-desc">减小字体大小</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+Backspace reset font size default" data-desc="重置字体大小">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+Backspace</kbd></div>
+      <div class="shortcut-desc">重置字体大小</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+F11 fullscreen toggle" data-desc="全屏切换">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+F11</kbd></div>
+      <div class="shortcut-desc">全屏 / 取消全屏</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ KITTY: 复制 & 杂项 ══ -->
+<div class="section kitty-color" data-app="kitty">
+  <div class="section-header" onclick="toggleSection(this)">
+    <div class="section-title"><span class="section-dot"></span>KITTY · 复制 & 杂项</div>
+    <div class="section-meta"><span class="section-count">7</span><span class="collapse-icon">▾</span></div>
+  </div>
+  <div class="section-body">
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+c copy clipboard" data-desc="复制到剪贴板">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+c</kbd></div>
+      <div class="shortcut-desc">复制到剪贴板</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+v paste clipboard" data-desc="从剪贴板粘贴">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+v</kbd></div>
+      <div class="shortcut-desc">从剪贴板粘贴</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+s paste selection primary" data-desc="从主选择区粘贴">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+s</kbd></div>
+      <div class="shortcut-desc">从主选择区粘贴</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+F2 edit kitty config" data-desc="打开配置文件编辑">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+F2</kbd></div>
+      <div class="shortcut-desc">打开配置文件编辑</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+F5 reload config" data-desc="重新加载配置文件">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+F5</kbd></div>
+      <div class="shortcut-desc">重新加载配置文件</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+F6 debug config" data-desc="调试配置文件问题">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+F6</kbd></div>
+      <div class="shortcut-desc">调试配置文件问题</div>
+    </div>
+    <div class="shortcut" data-app="kitty" data-keys="Ctrl+Shift+u unicode input char" data-desc="输入Unicode字符">
+      <span class="shortcut-star" onclick="toggleStar(this)">☆</span>
+      <div class="shortcut-keys"><kbd>Ctrl+Shift+u</kbd></div>
+      <div class="shortcut-desc">输入 Unicode 字符</div>
+    </div>
+  </div>
+</div>
+
+<div id="empty-state">
+  <div style="font-size:32px;margin-bottom:12px;">⌕</div>
+  <div>未找到匹配的快捷键</div>
+  <div style="margin-top:6px;font-size:10px;color:var(--text3)">试试换个关键词</div>
+</div>
+
+</div><!-- /layout -->
+
+<footer>
+  Vim &nbsp;·&nbsp; Tmux &nbsp;·&nbsp; Kitty &nbsp;|&nbsp; 默认键位 &nbsp;·&nbsp; Tmux prefix 默认为 <kbd style="font-size:10px;padding:1px 5px;background:var(--bg3);border:1px solid var(--border2);border-radius:3px;">Ctrl+b</kbd>
+</footer>
+
+<script>
+const shortcuts = document.querySelectorAll('.shortcut');
+const sections  = document.querySelectorAll('.section');
+const emptyEl   = document.getElementById('empty-state');
+const statsEl   = document.getElementById('stats');
+
+// ── STARS ──
+let starred = [];
+try { starred = JSON.parse(localStorage.getItem('cs-starred') || '[]'); } catch(e) {}
+
+function getKey(shortcutEl) {
+  return shortcutEl.dataset.app + '|' + shortcutEl.dataset.keys;
+}
+
+function toggleStar(el) {
+  const row = el.closest('.shortcut');
+  const key = getKey(row);
+  if (starred.includes(key)) {
+    starred = starred.filter(k => k !== key);
+    el.textContent = '☆';
+    el.classList.remove('starred');
+  } else {
+    starred.push(key);
+    el.textContent = '★';
+    el.classList.add('starred');
+  }
+  try { localStorage.setItem('cs-starred', JSON.stringify(starred)); } catch(e) {}
+  applyFilters();
+}
+
+function initStars() {
+  shortcuts.forEach(row => {
+    const starEl = row.querySelector('.shortcut-star');
+    if (starred.includes(getKey(row))) {
+      starEl.textContent = '★';
+      starEl.classList.add('starred');
+    }
+  });
+}
+
+// ── COLLAPSE ──
+function toggleSection(header) {
+  header.closest('.section').classList.toggle('collapsed');
+}
+
+// ── FILTERS ──
+let activeApps = { vim: true, tmux: true, kitty: true };
+let starFilter = false;
+
+document.querySelectorAll('.badge[data-filter]').forEach(badge => {
+  badge.addEventListener('click', () => {
+    const f = badge.dataset.filter;
+    if (f === 'starred') {
+      starFilter = !starFilter;
+      badge.classList.toggle('active', starFilter);
+    } else if (f === 'all') {
+      const allOn = activeApps.vim && activeApps.tmux && activeApps.kitty;
+      activeApps.vim = activeApps.tmux = activeApps.kitty = !allOn;
+    } else {
+      activeApps[f] = !activeApps[f];
+    }
+    // sync badges
+    const allOn = activeApps.vim && activeApps.tmux && activeApps.kitty;
+    document.querySelector('.badge.all').classList.toggle('active', allOn);
+    document.querySelector('.badge.vim').classList.toggle('active', activeApps.vim);
+    document.querySelector('.badge.tmux').classList.toggle('active', activeApps.tmux);
+    document.querySelector('.badge.kitty').classList.toggle('active', activeApps.kitty);
+    applyFilters();
+  });
+});
+
+// ── SEARCH ──
+document.getElementById('search').addEventListener('input', applyFilters);
+
+function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function applyFilters() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  let visible = 0;
+
+  sections.forEach(section => {
+    const app = section.dataset.app;
+    if (!activeApps[app]) { section.classList.add('app-hidden'); return; }
+    section.classList.remove('app-hidden');
+
+    let sVis = 0;
+    section.querySelectorAll('.shortcut').forEach(row => {
+      const isStarred = starred.includes(getKey(row));
+      const matchSearch = !q || row.dataset.keys.toLowerCase().includes(q) || row.dataset.desc.toLowerCase().includes(q);
+      const matchStar = !starFilter || isStarred;
+      if (matchSearch && matchStar) {
+        row.classList.remove('hidden');
+        sVis++;
+        visible++;
+        const descEl = row.querySelector('.shortcut-desc');
+        if (q) {
+          const re = new RegExp(`(${escapeRe(q)})`, 'gi');
+          descEl.innerHTML = row.dataset.desc.replace(re, '<span class="hl">$1</span>');
+        } else {
+          descEl.textContent = row.dataset.desc;
+        }
+      } else {
+        row.classList.add('hidden');
+      }
+    });
+    section.style.display = sVis === 0 ? 'none' : '';
+  });
+
+  emptyEl.classList.toggle('show', visible === 0);
+  statsEl.textContent = `共 ${visible} 条`;
+}
+
+initStars();
+applyFilters();
+</script>
+</body>
+</html>
