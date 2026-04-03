@@ -27,6 +27,44 @@
     --key-border:#323a52;
     --radius:   6px;
   }
+  html.light {
+    --bg:       #f5f6f8;
+    --bg2:      #ffffff;
+    --bg3:      #eef0f4;
+    --bg4:      #e4e7ed;
+    --border:   #d4d8e2;
+    --border2:  #b8bece;
+    --text:     #1e2233;
+    --text2:    #5a6180;
+    --text3:    #9aa0b8;
+    --vim:      #1a7f37;
+    --vim-dim:  #d4f0db;
+    --tmux:     #0969da;
+    --tmux-dim: #dbeafe;
+    --kitty:    #c0392b;
+    --kitty-dim:#fde8e6;
+    --star:     #b45309;
+    --key-bg:   #eef0f4;
+    --key-border:#c8cdd8;
+  }
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    background: var(--bg3);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    transition: all .15s;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .theme-toggle:hover { border-color: var(--text3); color: var(--text); }
+  .theme-toggle .t-icon { font-size: 13px; line-height: 1; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     background: var(--bg);
@@ -219,9 +257,15 @@
       <div class="logo-dot"></div>
       TERMINAL CHEATSHEET
     </div>
-    <div class="search-wrap">
-      <span class="search-icon">⌕</span>
-      <input type="search" id="search" placeholder="搜索快捷键或描述…" autocomplete="off">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="search" id="search" placeholder="搜索快捷键或描述…" autocomplete="off">
+      </div>
+      <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">
+        <span class="t-icon" id="theme-icon">☀</span>
+        <span id="theme-label">亮色</span>
+      </button>
     </div>
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -1071,6 +1115,22 @@ function applyFilters() {
   emptyEl.classList.toggle('show', visible === 0);
   statsEl.textContent = `共 ${visible} 条`;
 }
+
+// ── THEME ──
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  document.getElementById('theme-icon').textContent = isLight ? '🌙' : '☀';
+  document.getElementById('theme-label').textContent = isLight ? '暗色' : '亮色';
+  localStorage.setItem('cs-theme', isLight ? 'light' : 'dark');
+}
+(function initTheme() {
+  const saved = localStorage.getItem('cs-theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    document.getElementById('theme-icon').textContent = '🌙';
+    document.getElementById('theme-label').textContent = '暗色';
+  }
+})();
 
 initStars();
 applyFilters();
